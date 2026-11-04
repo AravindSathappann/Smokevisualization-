@@ -120,7 +120,7 @@ print("Slice 103:", density_slice_103.shape)
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
 axes[0].imshow(density_slice_102.T, origin='lower', cmap='gray')
-axes[0].set_title('density_000103 plotted')
+axes[0].set_title('density_000102 plotted')
 
 axes[1].imshow(density_slice_103.T, origin='lower', cmap='gray')
 axes[1].set_title('density_000103 plotted')
