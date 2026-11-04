@@ -85,3 +85,61 @@ plt.xlabel('dimension 1')
 plt.ylabel('dimension 2')
 
 plt.show()
+
+
+
+"""
+#
+#  ATTEMPT TO GENERATE SYNTHETIC BEFORE AND AFTER SMOKE IMAGES USING DENSITY/VELOCITY FIELDS:
+#
+"""
+
+density_102_path = None
+density_103_path = None
+
+for root, dirs, files in os.walk(folder):
+    if "density_000102.npz" in files:
+        density_102_path = os.path.join(root, "density_000102.npz")
+    if "density_000103.npz" in files:
+        density_103_path = os.path.join(root, "density_000103.npz")
+        
+        
+# Load densities
+density_102 = np.load(density_102_path)['data']
+density_103 = np.load(density_103_path)['data']
+        
+print("Density 102 shape:", density_102.shape)
+print("Density 103 shape:", density_103.shape)
+
+density_slice_102 = density_102[:, :, z_index, 0]
+density_slice_103 = density_103[:, :, z_index, 0]
+
+print("Slice 102:", density_slice_102.shape)
+print("Slice 103:", density_slice_103.shape)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+axes[0].imshow(density_slice_102.T, origin='lower', cmap='gray')
+axes[0].set_title('density_000103 plotted')
+
+axes[1].imshow(density_slice_103.T, origin='lower', cmap='gray')
+axes[1].set_title('density_000103 plotted')
+
+for ax in axes:
+    ax.set_xlabel('dimension 1')
+    ax.set_ylabel('dimension 2')
+
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
