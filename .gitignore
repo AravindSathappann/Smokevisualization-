@@ -1,3 +1,5 @@
 .venv/
+raftEnv/
 data/
 predictions/
+__pycache__/

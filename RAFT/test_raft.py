@@ -11,6 +11,24 @@ from torchvision.utils import flow_to_image
 import matplotlib.pyplot as plt
 import h5py
 
+def pad_to_min_size(img):
+    b, c, h, w = img.shape
+    pad_y = 0
+    pad_x = 0
+    if(h < 128):
+        pad_y = 128 - h
+    if(w < 128):
+        pad_x = 128 - w
+    
+    return F.pad(img, (0, pad_x, 0, pad_y), mode = "replicate"), h, w
+
+def pad_to_multiple_of_8(img):
+    b, c, h, w = img.shape
+    pad_y = (8 - h % 8)% 8
+    pad_x = (8 - w % 8)% 8
+    padded = F.pad(img, (0, pad_x, 0, pad_y), mode = "replicate")
+    return padded, h, w
+
 def calculate_from_images(img1_path, img2_path, destination):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
@@ -39,6 +57,14 @@ def calculate_from_images(img1_path, img2_path, destination):
     # Add batch dimension
     img1 = img1.unsqueeze(0)
     img2 = img2.unsqueeze(0)
+    print(img1.shape)
+
+    
+    img1, y1, x1 = pad_to_min_size(img1) # save orginal size as x1, y1
+    img1, _, _ = pad_to_multiple_of_8(img1)
+    print(f"Padded size{img1.shape}")
+    img2, _, _ = pad_to_min_size(img2)
+    img2, _, _ = pad_to_multiple_of_8(img2)
 
     if (img1.size()[2] % 8 != 0 or 
         img1.size()[3] % 8 != 0 or
@@ -61,6 +87,7 @@ def calculate_from_images(img1_path, img2_path, destination):
         )
         
         flow = flow_predictions[-1]
+        flow = flow[:, :, :y1, :x1] # remove padding
         pred = flow[0].detach().cpu()
         
         flow_rgb = flow_to_image(flow)[0]
@@ -186,10 +213,10 @@ def test_predictions(truth_path, img1_path, img2_path, destination):
     
     
     
-t_path1 = "data/springer/spring/train/0001/flow_FW_left/flow_FW_left_0001.flo5"
-i_path1 = "data/springer/spring/train/0001/frame_left/frame_left_0001.png"
-i_path2 = "data/springer/spring/train/0001/frame_left/frame_left_0002.png"
-test_predictions(t_path1, i_path1, i_path2, "")
+# t_path1 = "data/springer/spring/train/0001/flow_FW_left/flow_FW_left_0001.flo5"
+# i_path1 = "data/springer/spring/train/0001/frame_left/frame_left_0001.png"
+# i_path2 = "data/springer/spring/train/0001/frame_left/frame_left_0002.png"
+# test_predictions(t_path1, i_path1, i_path2, "")
 
 # t_path1 = "data/springer/spring/train/0002/flow_FW_left/flow_FW_left_0001.flo5"
 # i_path1 = "data/springer/spring/train/0002/frame_left/frame_left_0001.png"
