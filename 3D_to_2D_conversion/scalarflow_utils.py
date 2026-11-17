@@ -33,10 +33,11 @@ folder = r"C:\Users\sirow\Documents\WPI Classes & Projects\_MQP\sim_000000_data\
 ##   currently loads file from sim_000000
 ##   depends on what the folder variable at the top leads to
 ## file_name        : string - ex, "velocity_000102.npz" 
-def load_file(file_name):
+## sim_folder       : string - path to sim_folder - default is global folder variable 
+def load_file(file_name, sim_folder=folder):
     # store path to velocity file
     path = None
-    for root, dirs, files in os.walk(folder):
+    for root, dirs, files in os.walk(sim_folder):
         if file_name in files:
             path = os.path.join(root, file_name)
             break
