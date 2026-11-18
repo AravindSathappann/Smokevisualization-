@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import torch.nn.functional as F
 
+SCALE = 4
+
 from torchvision.models.optical_flow import (
     raft_large,
     Raft_Large_Weights
@@ -21,6 +23,13 @@ def pad_to_min_size(img):
         pad_x = 128 - w
     
     return F.pad(img, (0, pad_x, 0, pad_y), mode = "replicate"), h, w
+
+
+def upscale(img, scale):
+    return F.interpolate(img, scale_factor=scale, mode='bilinear', align_corners=False)
+    
+def downscale(flow, scale):
+    return F.avg_pool2d(flow, kernel_size=scale, stride=scale)/scale
 
 def pad_to_multiple_of_8(img):
     b, c, h, w = img.shape
@@ -59,7 +68,8 @@ def calculate_from_images(img1_path, img2_path, destination):
     img2 = img2.unsqueeze(0)
     print(img1.shape)
 
-    
+    img1 = upscale(img1, SCALE)
+    img2 = upscale(img2, SCALE)
     img1, y1, x1 = pad_to_min_size(img1) # save orginal size as x1, y1
     img1, _, _ = pad_to_multiple_of_8(img1)
     print(f"Padded size{img1.shape}")
@@ -83,11 +93,14 @@ def calculate_from_images(img1_path, img2_path, destination):
 
         flow_predictions = model(
             img1.to(device),
-            img2.to(device)
+            img2.to(device),
+            num_flow_updates = 32
         )
         
         flow = flow_predictions[-1]
         flow = flow[:, :, :y1, :x1] # remove padding
+        flow = downscale(flow, SCALE)
+         # * 60 /200 (60 fps/ 200 pixels in frame)
         pred = flow[0].detach().cpu()
         
         flow_rgb = flow_to_image(flow)[0]

@@ -13,17 +13,17 @@ import os
 ###########
 
 # path to locally downloaded sim folder
-sim_folder = folder = r"C:\Users\sirow\Documents\WPI Classes & Projects\_MQP\sim_000000_data\sim_000000_extracted\sim_000000"
+sim_folder = folder = r"C:\Users\pierc\Desktop\WPI\MQP\Smokevisualization-\data\sim_000000"
 
 
 # Output folders (My, jess's, local path, for generating the images before uploading to git)
-density_output_path = r"C:\Users\sirow\Documents\WPI Classes & Projects\_MQP\Smokevisualization_Github\3D_to_2D_conversion\density_images"
+density_output_path = r"C:\Users\pierc\Desktop\WPI\MQP\Smokevisualization-\3D_to_2D_conversion\density_images"
 os.makedirs(density_output_path, exist_ok=True)
 
-velocity_output_path = r"C:\Users\sirow\Documents\WPI Classes & Projects\_MQP\Smokevisualization_Github\3D_to_2D_conversion\velocity_slices"
+velocity_output_path = r"C:\Users\pierc\Desktop\WPI\MQP\Smokevisualization-\3D_to_2D_conversion\velocity_slices"
 os.makedirs(velocity_output_path, exist_ok=True)
 
-velocity_image_path = r"C:\Users\sirow\Documents\WPI Classes & Projects\_MQP\Smokevisualization_Github\3D_to_2D_conversion\visualized_velocity_images"
+velocity_image_path = r"C:\Users\pierc\Desktop\WPI\MQP\Smokevisualization-\3D_to_2D_conversion\visualized_velocity_images"
 os.makedirs(velocity_image_path, exist_ok=True)
 
 
@@ -262,25 +262,24 @@ def extract_simulation_slices(sim_folder, density_output_path, velocity_output_p
     for root, dirs, files in os.walk(sim_folder):
         for file in files:
             
-            # skip non .npz files
-            if not file.endswith(".npz"):
+            if not file.startswith ("velocity") or not file.endswith(".npz"):
                 continue
-            
-            # load data (to get z-dimension)
-            data = load_file(file, sim_folder)
-            
-            if file.startswith("density_"): # generate smoke images
-                for z in range(data.shape[2]):
-                    generate_smoke_image(file, z, sim_folder)
-            elif file.startswith("velocity_"): # extract velocity slices
-                for z in range(data.shape[2]):
-                    generate_2D_velocity_slice(file, z, sim_folder)
             else:
-                continue
+                # load data (to get z-dimension)
+                data = load_file(file, sim_folder)
+                
+                # if file.startswith("density_"): # generate smoke images
+                #     for z in range(data.shape[2]):
+                #         generate_smoke_image(file, z, sim_folder)
+                if file.startswith("velocity_"): # extract velocity slices
+                    #for z in range(data.shape[2]):
+                    generate_2D_velocity_slice(file, 50, sim_folder)
+                else:
+                    continue
             
             
 
-                    
+extract_simulation_slices(sim_folder, density_output_path, velocity_output_path)
             
             
 

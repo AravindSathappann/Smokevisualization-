@@ -3,3 +3,6 @@ raftEnv/
 data/
 predictions/
 __pycache__/
+density_images/
+velocity_slices/
+visualized_velocity_images/

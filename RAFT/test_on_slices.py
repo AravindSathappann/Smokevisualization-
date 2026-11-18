@@ -11,8 +11,8 @@ for i in range(102, 117):
     raw_image_dests.append(f"../3D_to_2D_conversion/density_images/density_000{i}_Z50.png")
     ground_truth_dests.append(f"../3D_to_2D_conversion/velocity_slices/velocity_000{i}_Z50.npz")
     
-for i in range(len(raw_image_dests)-1):
-    test_dests.append((raw_image_dests[i], raw_image_dests[i+1], ground_truth_dests[i]))
+for i in range(1, len(raw_image_dests)):
+    test_dests.append((raw_image_dests[i-1], raw_image_dests[i], ground_truth_dests[i]))
     
     #print(test_dests)
 
@@ -32,8 +32,7 @@ for i in range(len(test_dests)):
     data = np.load(test_dests[i][2])
     ux = data["vx"] 
     uy = data["vy"] 
-    stacked = np.stack((uy, ux), axis=2)
-    stacked *= 200
+    stacked = np.stack((ux, uy), axis=2)
     #stacked_in_pixels  = stacked
     print(stacked.shape)
 
@@ -41,7 +40,7 @@ for i in range(len(test_dests)):
     flow_tensor = torch.from_numpy(stacked).float()
 
     # Convert to (1, 2, H, W)
-    gt = flow_tensor.permute(2, 1, 0).unsqueeze(0)
+    gt = flow_tensor.permute(2, 0, 1).unsqueeze(0)
     
     gt_vis = gt[0].detach().clone().float().cpu()
 
@@ -54,14 +53,89 @@ for i in range(len(test_dests)):
     )
     flow_rgb = flow_to_image(gt_vis)
 
-    plt.figure(figsize=(10, 6))
+    # plt.figure(figsize=(10, 6))
 
-    plt.imshow(flow_rgb.permute(1, 2, 0).numpy())
+    # plt.imshow(flow_rgb.permute(1, 2, 0).numpy())
 
-    plt.title("Ground Truth Flow")
-    plt.axis("off")
+    # plt.title("Ground Truth Flow")
+    # plt.axis("off")
 
-    plt.savefig(f"{i}_truth.png")
+    # plt.savefig(f"{i}_truth.png")
+    
+    # Extract flow components
+    print("shapes!")
+    print(pred.shape)
+    print(gt_vis.shape)
+    print("predicted states in order pred.abs().max(), pred.abs().mean(), pred.abs().flatten().quantile(0.99): ")
+    print(pred.abs().max(), pred.abs().mean(), pred.abs().flatten().quantile(0.99))
+    U1 = gt_vis[0, :, :].numpy()
+    V1 = gt_vis[1, :, :].numpy()
+
+    U2 = pred[0, :, :].numpy()
+    V2 = pred[1, :, :].numpy()
+    
+    mag1 = np.sqrt(U1**2 + V1**2)
+    mag2 = np.sqrt(U2**2 + V2**2)
+
+    H, W = U1.shape
+
+    # Coordinate grids (shared)
+    X, Y = np.meshgrid(np.arange(W), np.arange(H))
+
+    step = 5
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+    image = plt.imread(test_dests[i][0])
+    axes[0].imshow(image, cmap='gray', origin='upper')
+    axes[1].imshow(image, cmap='gray', origin='upper')
+
+    # First subplot
+    q1 = axes[0].quiver(
+        X[::step, ::step],
+        Y[::step, ::step],
+        U1[::step, ::step],
+        V1[::step, ::step],
+        mag1[::step, ::step],
+        angles='xy',
+        scale_units='xy',
+        scale=0.5,
+        cmap='viridis'
+    )
+
+    # Second subplot
+    q2 = axes[1].quiver(
+        X[::step, ::step],
+        Y[::step, ::step],
+        U2[::step, ::step],
+        V2[::step, ::step],
+        mag2[::step, ::step],
+        angles='xy',
+        scale_units='xy',
+        scale=0.5,
+        cmap='viridis'
+    )
+
+    # Apply identical axis settings
+    for ax in axes:
+        ax.invert_yaxis()
+        ax.set_aspect('equal')
+        ax.set_xlim(0, W)
+        ax.set_ylim(H, 0)
+
+    axes[0].set_title("Ground Truth")
+    axes[1].set_title("RAFT Prediction")
+    
+    vmax = max(mag1.max(), mag2.max())
+
+    q1.set_clim(0, vmax)
+    q2.set_clim(0, vmax)
+
+    cbar_ax = fig.add_axes([0.02, 0.15, 0.015, 0.7])
+
+    fig.colorbar(q1, cax=cbar_ax, label='Velocity Magnitude (pixels/frame)')
+
+    plt.tight_layout()
+    plt.savefig(f"comparison{i}.png", dpi=300)
     
     
     # Valid pixels: at minimum, remove NaN/Inf values.
@@ -98,6 +172,7 @@ for i in range(len(test_dests)):
     print(f"Median EPE:   {epe_valid.median().item():.4f} px")
     print(f"90th pct EPE: {torch.quantile(epe_valid, 0.90).item():.4f} px")
     print(f"Max EPE:      {epe_valid.max().item():.4f} px")
+    
     
 
 
